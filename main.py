@@ -13,7 +13,7 @@ def get_api_key():
         sys.exit(1)
     return api_key
 
-def ask_claude(prompt, model="claude-3-sonnet-20240229"):
+def ask_claude(prompt, model="claude-3-5-sonnet-20241022"):
     """Send prompt to Claude and return response."""
     client = Anthropic(api_key=get_api_key())
     
