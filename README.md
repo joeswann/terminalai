@@ -16,44 +16,33 @@ git clone <repository-url>
 cd claude-cli
 ```
 
-2. Install dependencies:
+2. Run the installation script:
 
 ```bash
-pip install -r requirements.txt
+chmod +x install.sh
+./install.sh
 ```
 
-3. Make the script executable:
+3. Source your shell configuration:
 
 ```bash
-chmod +x ai
+source ~/.bashrc  # or source ~/.zshrc for Zsh
 ```
 
-4. Add to your PATH by either:
-
-   Moving to system bin:
-
-   ```bash
-   sudo mv ai /usr/local/bin/
-   ```
-
-   OR
-
-   Creating a personal bin directory:
-
-   ```bash
-   mkdir -p ~/bin
-   mv ai ~/bin/
-   echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc  # or ~/.zshrc for Zsh
-   source ~/.bashrc  # or source ~/.zshrc for Zsh
-   ```
-
-5. Set up your API key:
+4. Set up your API key:
 
 ```bash
 export ANTHROPIC_API_KEY='your-key-here'
 ```
 
 Add this to your `.bashrc` or `.zshrc` to make it permanent.
+
+The installation script will:
+
+- Create a virtual environment
+- Install all dependencies
+- Set up the CLI command in your PATH
+- Configure your shell environment
 
 ## Usage
 
@@ -104,6 +93,14 @@ cat meeting_notes.txt | ai "create a bullet-point summary"
 
 - `ANTHROPIC_API_KEY`: Your Anthropic API key (required)
 
+## Technical Details
+
+- Uses Python virtual environment for isolated dependencies
+- Installed in `~/bin` with automatic PATH configuration
+- Dependencies managed through `requirements.txt`
+- Maximum response length: 1000 tokens
+- Uses Claude 3.5 Sonnet model
+
 ## Error Handling
 
 The script will:
@@ -117,6 +114,26 @@ The script will:
 - Maximum response length is set to 1000 tokens
 - Requires active internet connection
 - API usage is subject to Anthropic's rate limits and pricing
+
+## Project Structure
+
+```
+claude-cli/
+├── README.md
+├── requirements.txt
+├── install.sh
+├── main.py
+└── .venv/          # Created during installation
+```
+
+## Troubleshooting
+
+If you encounter any issues:
+
+1. Ensure Python 3.7+ is installed: `python3 --version`
+2. Verify the API key is set: `echo $ANTHROPIC_API_KEY`
+3. Check that `~/bin` is in your PATH: `echo $PATH`
+4. Try reinstalling: `./install.sh`
 
 ## Contributing
 
