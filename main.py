@@ -36,13 +36,16 @@ def convert_to_command(natural_language):
     """Convert natural language to shell command using Claude."""
     prompt = f"""As an expert in shell commands, convert this natural language request into the most appropriate shell command or sequence of commands. Consider:
 
-1. Use common unix/linux commands and standard tools
+1. Use common unix/linux commands and standard tools, assume you are running on mac
 2. Prefer safer options when available (e.g., 'rm -i' instead of just 'rm')
 3. Use clear formatting for better readability
 4. Handle edge cases and errors appropriately
 5. Use proper quoting for file paths and variables
 6. For multiple commands, use && to ensure each step completes successfully before proceeding.
 7. You can call yourself using the syntax ai 'prompt' and it accepts pipes. -c is for running commands. For example: cat ~/.zshrc | ai -c "Combine existing zshrc file with zshrc docs" | ai "explain how the zshrc could be improved" 
+8. You can use lynx --dump instead of curl to read pages
+9. Prefer using ai instead of grep on smaller outputs for answering questions 
+10. Prefer using patch to edit existing files and explain the patch before applying it
 
 Request: {natural_language}
 

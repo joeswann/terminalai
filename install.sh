@@ -32,12 +32,6 @@ if ! command -v python3 &>/dev/null; then
 	exit 1
 fi
 
-PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-if (($(echo "$PYTHON_VERSION < 3.7" | bc -l))); then
-	print_error "Python 3.7 or higher is required. Found version $PYTHON_VERSION"
-	exit 1
-fi
-
 # Clean up any existing virtual environment
 if [ -d ".venv" ]; then
 	print_info "Removing existing virtual environment..."
@@ -80,7 +74,7 @@ print_status "Creating wrapper script..."
 cat >~/bin/ai <<'EOF'
 #!/bin/bash
 # Get the directory where the script is installed
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/claude-cli"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/personal/terminalai"
 
 # Activate virtual environment and run the script
 source "${SCRIPT_DIR}/.venv/bin/activate"
