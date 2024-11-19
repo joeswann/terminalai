@@ -41,6 +41,8 @@ def convert_to_command(natural_language):
 3. Use clear formatting for better readability
 4. Handle edge cases and errors appropriately
 5. Use proper quoting for file paths and variables
+6. For multiple commands, use && to ensure each step completes successfully before proceeding.
+7. You can call yourself using the syntax ai 'prompt' and it accepts pipes. -c is for running commands. For example: cat ~/.zshrc | ai -c "Combine existing zshrc file with zshrc docs" | ai "explain how the zshrc could be improved" 
 
 Request: {natural_language}
 
@@ -51,7 +53,7 @@ Respond with ONLY the command(s), no explanations or additional text. Examples:
 - "find large files" → find . -type f -size +100M -exec ls -lh {{}};
 - "show system memory" → free -h
 
-For multiple commands, use && to ensure each step completes successfully before proceeding."""
+"""
 
     command = ask_claude(prompt).strip()
     return command
