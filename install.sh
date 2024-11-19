@@ -3,6 +3,7 @@
 # Set up colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Function to print status messages
@@ -14,10 +15,33 @@ print_error() {
 	echo -e "${RED}[!]${NC} $1"
 }
 
+print_info() {
+	echo -e "${BLUE}[i]${NC} $1"
+}
+
+# Check if script is being run with sudo
+if [ "$EUID" -eq 0 ]; then
+	print_error "Please do not run this script with sudo. It should be run as your regular user."
+	exit 1
+fi
+
 # Check Python version
+print_info "Checking Python version..."
 if ! command -v python3 &>/dev/null; then
 	print_error "Python 3 is required but not installed."
 	exit 1
+fi
+
+PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+if (($(echo "$PYTHON_VERSION < 3.7" | bc -l))); then
+	print_error "Python 3.7 or higher is required. Found version $PYTHON_VERSION"
+	exit 1
+fi
+
+# Clean up any existing virtual environment
+if [ -d ".venv" ]; then
+	print_info "Removing existing virtual environment..."
+	rm -rf .venv
 fi
 
 # Create virtual environment
@@ -34,6 +58,13 @@ source .venv/bin/activate || {
 	exit 1
 }
 
+# Upgrade pip
+print_status "Upgrading pip..."
+python -m pip install --upgrade pip || {
+	print_error "Failed to upgrade pip"
+	exit 1
+}
+
 # Install requirements
 print_status "Installing requirements..."
 pip install -r requirements.txt || {
@@ -46,11 +77,17 @@ mkdir -p ~/bin
 
 # Create the wrapper script
 print_status "Creating wrapper script..."
-cat >~/bin/ai <<EOF
+cat >~/bin/ai <<'EOF'
 #!/bin/bash
-source "$(pwd)/.venv/bin/activate"
-python "$(pwd)/main.py" "\$@"
+# Get the directory where the script is installed
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/claude-cli"
+
+# Activate virtual environment and run the script
+source "${SCRIPT_DIR}/.venv/bin/activate"
+python "${SCRIPT_DIR}/main.py" "$@"
+status=$?
 deactivate
+exit $status
 EOF
 
 # Make the wrapper script executable
@@ -66,8 +103,11 @@ if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
 	# Detect shell
 	if [ -n "$ZSH_VERSION" ]; then
 		SHELL_RC="$HOME/.zshrc"
-	else
+	elif [ -n "$BASH_VERSION" ]; then
 		SHELL_RC="$HOME/.bashrc"
+	else
+		print_error "Unsupported shell. Please manually add ~/bin to your PATH"
+		exit 1
 	fi
 
 	echo 'export PATH="$HOME/bin:$PATH"' >>"$SHELL_RC"
@@ -75,5 +115,12 @@ if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
 fi
 
 print_status "Installation complete!"
-print_status "Please run: source ~/.bashrc (or source ~/.zshrc for Zsh)"
-print_status "Then set your API key: export ANTHROPIC_API_KEY='your-key-here'"
+print_info "Next steps:"
+echo -e "1. Run: ${GREEN}source ~/.bashrc${NC} (or ${GREEN}source ~/.zshrc${NC} for Zsh)"
+echo -e "2. Set your API key: ${GREEN}export ANTHROPIC_API_KEY='your-key-here'${NC}"
+echo -e "3. Add the API key to your shell config to make it permanent"
+echo
+print_info "Example usage:"
+echo -e "- Ask a question: ${GREEN}ai \"what is the capital of France?\"${NC}"
+echo -e "- Execute a command: ${GREEN}ai -c \"show disk usage\"${NC}"
+echo -e "- Process a file: ${GREEN}cat file.txt | ai \"summarize this\"${NC}"

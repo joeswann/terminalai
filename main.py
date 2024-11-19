@@ -34,29 +34,66 @@ def ask_claude(prompt, model="claude-3-5-sonnet-20241022"):
 
 def convert_to_command(natural_language):
     """Convert natural language to shell command using Claude."""
-    prompt = f"""Convert this natural language request into a shell command (just return the command itself, no explanation):
-    
+    prompt = f"""As an expert in shell commands, convert this natural language request into the most appropriate shell command or sequence of commands. Consider:
+
+1. Use common unix/linux commands and standard tools
+2. Prefer safer options when available (e.g., 'rm -i' instead of just 'rm')
+3. Use clear formatting for better readability
+4. Handle edge cases and errors appropriately
+5. Use proper quoting for file paths and variables
+
 Request: {natural_language}
 
-Respond with just the command, nothing else. For example:
-- "list all files recursively" -> "ls -R"
-- "show disk usage" -> "df -h"
-"""
+Respond with ONLY the command(s), no explanations or additional text. Examples:
+- "list all files recursively" → ls -R
+- "show disk usage" → df -h
+- "remove all pdf files" → rm -i *.pdf
+- "find large files" → find . -type f -size +100M -exec ls -lh {{}};
+- "show system memory" → free -h
+
+For multiple commands, use && to ensure each step completes successfully before proceeding."""
+
     command = ask_claude(prompt).strip()
     return command
 
 def execute_command(command):
-    """Execute a shell command and return its output."""
+    """Execute the shell command and return output."""
     try:
         result = subprocess.run(command, shell=True, text=True, capture_output=True)
-        return result.stdout if result.stdout else result.stderr
-    except subprocess.SubprocessError as e:
+        if result.returncode != 0:
+            print(f"Command failed with error:\n{result.stderr}")
+            sys.exit(result.returncode)
+        return result.stdout
+    except Exception as e:
         print(f"Error executing command: {str(e)}")
         sys.exit(1)
 
+def process_pipe_input(content):
+    """Process input received through pipe."""
+    prompt = f"""As a helpful AI assistant, I'll analyze or process the following content. If it appears to be:
+- Code: I'll explain, improve, or debug it
+- Log file: I'll identify patterns, errors, or issues
+- Text: I'll summarize or analyze it
+- Data: I'll provide insights or statistics
+- Commands: I'll explain their purpose and usage
+
+Content to process:
+
+{content}
+
+Please provide a clear and concise response."""
+    return ask_claude(prompt)
+
 def main():
-    parser = argparse.ArgumentParser(description='Command-line interface for Claude')
-    parser.add_argument('prompt', nargs='?', help='Direct prompt for Claude')
+    parser = argparse.ArgumentParser(
+        description='Command-line interface for Claude AI',
+        epilog='Examples:\n'
+               '  ai "explain how DNS works"\n'
+               '  ai -c "show memory usage"\n'
+               '  cat error.log | ai "find issues"\n',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument('prompt', nargs='?', help='Question or request for Claude')
     parser.add_argument('-c', '--command', action='store_true', 
                       help='Convert natural language to shell command and execute it')
     args = parser.parse_args()
@@ -64,7 +101,9 @@ def main():
     # Check if receiving input from pipe
     if not sys.stdin.isatty():
         stdin_content = sys.stdin.read().strip()
-        prompt = f"Here's the content to process:\n\n{stdin_content}\n\nPlease provide a response."
+        response = process_pipe_input(stdin_content)
+        print(response)
+        sys.exit(0)
     # If no pipe and no arguments, show usage
     elif not args.prompt:
         parser.print_help()
@@ -74,15 +113,12 @@ def main():
         command = convert_to_command(args.prompt)
         print(f"Executing: {command}")
         output = execute_command(command)
-        print("\nOutput:")
         print(output)
-        return
+        sys.exit(0)
     # Use provided prompt
     else:
-        prompt = args.prompt
-
-    response = ask_claude(prompt)
-    print(response)
+        response = ask_claude(args.prompt)
+        print(response)
     
 if __name__ == "__main__":
     main()
