@@ -1,6 +1,6 @@
 # Claude CLI
 
-A command-line interface for interacting with Claude, Anthropic's AI assistant. Ask questions, process files, and pipe command outputs directly to Claude from your terminal.
+A command-line interface for interacting with Claude, Anthropic's AI assistant. Ask questions, process files, pipe command outputs directly to Claude, and execute natural language commands from your terminal.
 
 ## Prerequisites
 
@@ -55,6 +55,23 @@ ai "what is the capital of France?"
 ai "how do I list all Python files in a directory?"
 ```
 
+### Natural Language Command Execution
+
+Execute terminal commands using natural language:
+
+```bash
+ai -c "list all files recursively in this folder"
+ai -c "show disk usage for all drives"
+ai -c "find all python files modified in the last week"
+ai -c "create a new directory called projects"
+```
+
+The `-c` or `--command` flag tells Claude to:
+
+1. Convert your natural language request into a shell command
+2. Show you the command it's about to execute
+3. Run the command and display its output
+
 ### Process Files
 
 Process file contents:
@@ -79,6 +96,11 @@ ps aux | ai "which processes are using the most CPU?"
 # Get coding help
 ai "write a python function to calculate fibonacci numbers"
 
+# Execute system commands in natural language
+ai -c "compress all jpg files in current directory"
+ai -c "show memory usage"
+ai -c "find large files over 1GB"
+
 # Analyze logs
 tail -n 50 /var/log/system.log | ai "find any error patterns"
 
@@ -88,6 +110,15 @@ man grep | ai "explain grep's most useful options"
 # Summarize documents
 cat meeting_notes.txt | ai "create a bullet-point summary"
 ```
+
+## Command Execution Safety
+
+When using the `-c/--command` flag:
+
+- The tool will always show you the command it plans to execute before running it
+- Review the command to ensure it matches your intentions
+- Be cautious with destructive operations (delete, remove, etc.)
+- The tool executes commands with your current user permissions
 
 ## Environment Variables
 
@@ -100,6 +131,8 @@ cat meeting_notes.txt | ai "create a bullet-point summary"
 - Dependencies managed through `requirements.txt`
 - Maximum response length: 1000 tokens
 - Uses Claude 3.5 Sonnet model
+- Natural language command conversion using Claude
+- Safe command execution with subprocess module
 
 ## Error Handling
 
@@ -107,6 +140,7 @@ The script will:
 
 - Check for the presence of the API key
 - Provide clear error messages if the API call fails
+- Show command execution errors if they occur
 - Exit with appropriate status codes
 
 ## Limitations
@@ -114,6 +148,8 @@ The script will:
 - Maximum response length is set to 1000 tokens
 - Requires active internet connection
 - API usage is subject to Anthropic's rate limits and pricing
+- Command execution is limited to your user permissions
+- Complex multi-step commands may need to be broken down
 
 ## Project Structure
 
@@ -134,6 +170,7 @@ If you encounter any issues:
 2. Verify the API key is set: `echo $ANTHROPIC_API_KEY`
 3. Check that `~/bin` is in your PATH: `echo $PATH`
 4. Try reinstalling: `./install.sh`
+5. For command execution issues, try running the command directly in terminal
 
 ## Contributing
 

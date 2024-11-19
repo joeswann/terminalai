@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+import subprocess
 from anthropic import Anthropic
 
 def get_api_key():
@@ -31,9 +32,33 @@ def ask_claude(prompt, model="claude-3-5-sonnet-20241022"):
         print(f"Error: {str(e)}")
         sys.exit(1)
 
+def convert_to_command(natural_language):
+    """Convert natural language to shell command using Claude."""
+    prompt = f"""Convert this natural language request into a shell command (just return the command itself, no explanation):
+    
+Request: {natural_language}
+
+Respond with just the command, nothing else. For example:
+- "list all files recursively" -> "ls -R"
+- "show disk usage" -> "df -h"
+"""
+    command = ask_claude(prompt).strip()
+    return command
+
+def execute_command(command):
+    """Execute a shell command and return its output."""
+    try:
+        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+        return result.stdout if result.stdout else result.stderr
+    except subprocess.SubprocessError as e:
+        print(f"Error executing command: {str(e)}")
+        sys.exit(1)
+
 def main():
     parser = argparse.ArgumentParser(description='Command-line interface for Claude')
     parser.add_argument('prompt', nargs='?', help='Direct prompt for Claude')
+    parser.add_argument('-c', '--command', action='store_true', 
+                      help='Convert natural language to shell command and execute it')
     args = parser.parse_args()
 
     # Check if receiving input from pipe
@@ -44,6 +69,14 @@ def main():
     elif not args.prompt:
         parser.print_help()
         sys.exit(1)
+    # Handle command conversion and execution
+    elif args.command:
+        command = convert_to_command(args.prompt)
+        print(f"Executing: {command}")
+        output = execute_command(command)
+        print("\nOutput:")
+        print(output)
+        return
     # Use provided prompt
     else:
         prompt = args.prompt
